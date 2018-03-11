@@ -52,11 +52,11 @@ app.set('port', (process.env.PORT || 5000));
 app.get('/post/:postId', (req, res, next) => {
 	res.header("Access-Control-Allow-Origin", "*");
     res.setHeader('Access-Control-Allow-Credentials', true);
-	
+
 	Post.findOne({"id": req.params.postId}).exec(function(error, post) {
 		if (error) {
 			console.log('it died here');
-			return next(error);
+			return res.send({"response": err})
 		} else {
 			if (post === null) {
 				var err = new Error('Not authorized');
