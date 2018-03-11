@@ -109,16 +109,18 @@ app.post('/login', function(req, res, next) {
 		if (err || !user) {
 			var err = new Error('Email or pasword not found');
 			err.status = 401;
-			return {"body": "Not okay"};
+			return res.json({"body": "Not okay"});
 		} else {
 			console.log('we good');
 			req.session.userId = user._id;
-			return{"good": "login complete"};
+			return res.json({"good": "login complete"});
 		}
 	});
 });
 
 app.get('/profile', function (req, res, next) {
+	console.log(req.session);
+	console.log(req.session.userId);
 	User.findById(req.session.userId).exec(function(error, user) {
 		if (error) {
 			return error;
@@ -126,7 +128,8 @@ app.get('/profile', function (req, res, next) {
 			if (user === null) {
 				var err = new Error('Not authorized');
 				err.status = 400;
-				return next(err);
+				console.log('lmao profile died');
+				return res.send({"err": "Unauthorized"});
 			} else {
           return res.send({"username": user.username, "email": user.email})
 			}
