@@ -1,7 +1,8 @@
 const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
-var User = require('./schema');
+var User = require('./userSchema');
+var Post = require('./postSchema');
 var session = require('express-session');
 var MongoStore = require('connect-mongo')(session);
 const bodyParser = require('body-parser');
@@ -42,6 +43,21 @@ app.get('/logout', (req, res) => {
 	res.sendFile(path.join(__dirname, '../public/logout.html'));
 });
 
+app.get('/post', (req, res) => {
+	Post.findById(1).exec(function(error, post) {
+		if (error) {
+			return next(error);
+		} else {
+			if (user === null) {
+				var err = new Error('Not authorized');
+				err.status = 400;
+				return next(err);
+			} else {
+          return res.send(JSON.stringify(post));
+			}
+		}
+	})
+});
 
 app.post('/register', function (req, res, next) {
 
