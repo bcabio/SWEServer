@@ -105,6 +105,7 @@ app.post('/login', function(req, res, next) {
 	console.log(req.body);
 	console.log(req.body.logemail);
 	console.log(req.body.logpassword);
+	res.header("Access-Control-Allow-Origin", "Accept");
 	User.authenticate(req.body.logemail, req.body.logpassword, function(err, user) {
 		if (err || !user) {
 			var err = new Error('Email or pasword not found');
