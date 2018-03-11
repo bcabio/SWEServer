@@ -43,20 +43,23 @@ app.get('/logout', (req, res) => {
 	res.sendFile(path.join(__dirname, '../public/logout.html'));
 });
 
-app.get('/post', (req, res) => {
-	Post.findById(1).exec(function(error, post) {
+app.get('/post/:postId', (req, res, next) => {
+	Post.findOne({"id": req.params.postId}).exec(function(error, post) {
 		if (error) {
+			console.log('it died here');
 			return next(error);
 		} else {
-			if (user === null) {
+			if (post === null) {
 				var err = new Error('Not authorized');
 				err.status = 400;
-				return next(err);
+				console.log('lmao');
+				return res.send(err);
 			} else {
-          return res.send(JSON.stringify(post));
+          return res.send(JSON.stringify({"id": post.id, "title": post.title, "description": post.description, "pictureLink": post.pictureLink}));
 			}
 		}
 	})
+	// res.send(JSON.stringify({'hello': 1}));
 });
 
 app.post('/register', function (req, res, next) {
@@ -66,7 +69,7 @@ app.post('/register', function (req, res, next) {
 	  req.body.password &&
 	  req.body.passwordConf) {
 
-	  var userData = {
+	  var userData = {	
 	    email: req.body.email,
 	    username: req.body.username,
 	    password: req.body.password,
@@ -120,7 +123,7 @@ app.get('/profile', function (req, res, next) {
 				err.status = 400;
 				return next(err);
 			} else {
-          return res.send('<h1>Name: </h1>' + user.username + '<h2>Mail: </h2>' + user.email + '<br><a type="button" href="/logout">Logout</a>')
+          return res.send({"username": user.username, "email": user.email})
 			}
 		}
 	})
