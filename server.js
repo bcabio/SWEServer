@@ -1,11 +1,13 @@
 const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
+
 var User = require('./userSchema');
 var Post = require('./postSchema');
+
 var session = require('express-session');
 var MongoStore = require('connect-mongo')(session);
-const bodyParser = require('body-parser');
+var bodyParser = require('body-parser');
 mongoose.connect('mongodb://admin:admin@ds161713.mlab.com:61713/swe-project');
 
 var db = mongoose.connection;
@@ -19,7 +21,7 @@ db.once('open', function () {
 const app = express();
 app.use(express.static(__dirname));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({extended: false}));
 app.use(session({
   secret: 'work hard',
   resave: true,
@@ -31,17 +33,17 @@ app.use(session({
 
 app.set('port', (process.env.PORT || 5000));
 
-app.get('/', (req,res) => {
-	res.sendFile(path.join(__dirname, '../public/index.html'));
-});
+// app.get('/', (req,res) => {
+// 	res.sendFile(path.join(__dirname, '../public/index.html'));
+// });
 
-app.get('/invalidUser', (req, res) => {
-	res.sendFile(path.join(__dirname, '../public/error.html'));
-});
+// app.get('/invalidUser', (req, res) => {
+// 	res.sendFile(path.join(__dirname, '../public/error.html'));
+// });
 
-app.get('/logout', (req, res) => {
-	res.sendFile(path.join(__dirname, '../public/logout.html'));
-});
+// app.get('/logout', (req, res) => {
+// 	res.sendFile(path.join(__dirname, '../public/logout.html'));
+// });
 
 app.get('/post/:postId', (req, res, next) => {
 	Post.findOne({"id": req.params.postId}).exec(function(error, post) {
@@ -64,6 +66,7 @@ app.get('/post/:postId', (req, res, next) => {
 
 app.post('/register', function (req, res, next) {
 
+	console.log(req.body);
 	if (req.body.email &&
 	  req.body.username &&
 	  req.body.password &&
@@ -81,10 +84,11 @@ app.post('/register', function (req, res, next) {
 	  User.create(userData, function (err, user) {
 	    if (err) {
 	    	console.log(err);
-	      return res.redirect('/');
+	      return next(err);
 	    } else {
 	    	console.log('gucii');
-	      return res.redirect('/profile');
+          req.session.userId = user._id;
+	      return res.json({"reg": "Registration Complete!"});
 	    }
 	  });
 	} else if (!req.body.email ||
@@ -98,17 +102,18 @@ app.post('/register', function (req, res, next) {
 });
 
 app.post('/login', function(req, res, next) {
+	console.log(req.body);
 	console.log(req.body.logemail);
 	console.log(req.body.logpassword);
-	User.authenticate(req.body.email, req.body.password, function(err, user) {
+	User.authenticate(req.body.logemail, req.body.logpassword, function(err, user) {
 		if (err || !user) {
 			var err = new Error('Email or pasword not found');
 			err.status = 401;
-			return res.redirect('/invalidUser');
+			return {"body": "Not okay"};
 		} else {
 			console.log('we good');
 			req.session.userId = user._id;
-			return res.redirect('/profile');
+			return{"good": "login complete"};
 		}
 	});
 });
@@ -116,7 +121,7 @@ app.post('/login', function(req, res, next) {
 app.get('/profile', function (req, res, next) {
 	User.findById(req.session.userId).exec(function(error, user) {
 		if (error) {
-			return next(error);
+			return error;
 		} else {
 			if (user === null) {
 				var err = new Error('Not authorized');
@@ -136,7 +141,7 @@ app.get('/logout', function (req, res, next) {
       if (err) {
         return next(err);
       } else {
-        return res.redirect('/');
+        return "logged out";
       }
     });
   }
