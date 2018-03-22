@@ -71,6 +71,33 @@ app.get('/post/:postId', (req, res, next) => {
 	// res.send(JSON.stringify({'hello': 1}));
 });
 
+
+app.get('/posts', (req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    Post.find({
+        $and: [
+            {"id": {$gte: 0}},
+            {"id": {$lte: 20}}
+        ]
+    }).exec(function(error, posts) {
+        if (error) {
+            console.log('it died here');
+            return next(error);
+        } else {
+            if (posts === null) {
+                var err = new Error('Not authorized');
+                err.status = 400;
+                console.log('lmao');
+                return res.send(err);
+            } else {
+                return res.send(JSON.stringify(posts));
+            }
+        }
+    })
+    // res.send(JSON.stringify({'hello': 1}));
+});
+
 app.post('/register', function (req, res, next) {
 	res.header("Access-Control-Allow-Origin", "*");
     res.setHeader('Access-Control-Allow-Credentials', true);
