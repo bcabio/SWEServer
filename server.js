@@ -98,6 +98,43 @@ app.get('/posts', (req, res, next) => {
     // res.send(JSON.stringify({'hello': 1}));
 });
 
+app.post('/submitPost', function (req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.setHeader('Access-Control-Allow-Credentials', true);
+
+    console.log(req.body);
+    if (req.body.title &&
+        req.body.description &&
+        req.body.pictureLink) {
+
+        var postData = {  
+            title: req.body.title,
+            description: req.body.description,
+            pictureLink: req.body.pictureLink,
+        }
+
+        //use schema.create to insert data into the db
+        User.create(userData, function (err, user) {
+            if (err) {
+                return res.send({"response": "The user already exists"});
+            } else {
+                console.log('gucii');
+                req.session.userId = user._id;
+                return res.send({"response": "Thank you, " + req.body.username + ", your registration is complete!"});
+            }
+        });
+    } else if (!req.body.email ||
+                !req.body.username ||
+                !req.body.password || 
+                !req.body.passwordConf) {
+        var err = new Error('All fields are required');
+        err.status = 401;
+        return res.send({"response": "All fields are required"});
+    } else {
+        return res.send({"response": "The user already exists"})
+    }
+});
+
 app.post('/register', function (req, res, next) {
 	res.header("Access-Control-Allow-Origin", "*");
     res.setHeader('Access-Control-Allow-Credentials', true);
