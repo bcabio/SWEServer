@@ -18,6 +18,15 @@ var PostSchema = new mongoose.Schema({
 	pictureLink: {
 		type: String, 
 		required: true
+	},
+	updated: {
+		type: Date,
+		default: Date.now,
+		required: true
+	},
+	creator: {
+		type: String,
+		required: true
 	}
 });
 
