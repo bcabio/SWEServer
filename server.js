@@ -2,14 +2,17 @@ const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
+const dotenv = require('dotenv').config();
+const cors = require('cors');
 
 var User = require('./userSchema');
 var Post = require('./postSchema');
 
 var session = require('express-session');
+// var cookieSession = require('cookie-session');
 var MongoStore = require('connect-mongo')(session);
 var bodyParser = require('body-parser');
-mongoose.connect('mongodb://admin:admin@ds161713.mlab.com:61713/swe-project');
+mongoose.connect(process.env.MONGO_URL);
 
 var db = mongoose.connection;
 
@@ -20,82 +23,75 @@ db.once('open', function () {
 });
 
 const app = express();
-app.use(express.static(__dirname));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: false}));
+
+app.use(cors());
 app.use(cookieParser());
 app.use(session({
   secret: 'work hard',
   resave: true,
-  secure: true,
   saveUninitialized: false,
   store: new MongoStore({
-    mongooseConnection: db
-  })
+    mongooseConnection: db,
+    stringify: false
+  }),
+  cookie: {
+  	maxAge: (4*60*60*1000),
+  	secure: true
+  }
 }));
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: false}));
+
+app.use(express.static(__dirname));
+
+app.use(function(req, res, next) {
+	res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+	res.setHeader('Access-Control-Allow-Credentials', true);
+	return next();
+});
+
+
+
 
 app.set('port', (process.env.PORT || 5000));
 
-// app.get('/', (req,res) => {
-// 	res.sendFile(path.join(__dirname, '../public/index.html'));
-// });
-
-// app.get('/invalidUser', (req, res) => {
-// 	res.sendFile(path.join(__dirname, '../public/error.html'));
-// });
-
-// app.get('/logout', (req, res) => {
-// 	res.sendFile(path.join(__dirname, '../public/logout.html'));
-// });
-
-
 app.get('/post/:postId', (req, res, next) => {
-	res.header("Access-Control-Allow-Origin", "*");
-    res.setHeader('Access-Control-Allow-Credentials', true);
-    console.log(req.params);
-	Post.findOne({"id": req.params.postId}).exec(function(error, post) {
+	Post.findOne({'id': req.params.postId}).exec(function(error, post) {
 		if (error) {
-			console.log('it died here');
-			return res.send({"response": err})
+			return res.send({'response': err})
 		} else {
 			if (post === null) {
 				var err = new Error('Not authorized');
 				err.status = 400;
-				console.log('lmao');
 				return res.send(err);
 			} else {
-          		return res.send(JSON.stringify({"id": post.id, "title": post.title, "description": post.description, "pictureLink": post.pictureLink}));
+          		return res.send(JSON.stringify({'id': post.id, 'title': post.title, 'description': post.description, 'pictureLink': post.pictureLink}));
 			}
 		}
 	})
-	// res.send(JSON.stringify({'hello': 1}));
 });
 
 
 app.get('/posts', (req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.setHeader('Access-Control-Allow-Credentials', true);
     Post.find({
         $and: [
-            {"id": {$gte: 0}},
-            {"id": {$lte: 20}}
+            {'id': {$gte: 0}},
+            {'id': {$lte: 20}}
         ]
     }).exec(function(error, posts) {
         if (error) {
-            console.log('it died here');
             return next(error);
         } else {
             if (posts === null) {
                 var err = new Error('Not authorized');
                 err.status = 400;
-                console.log('lmao');
                 return res.send(err);
             } else {
                 return res.send(JSON.stringify(posts));
             }
         }
     })
-    // res.send(JSON.stringify({'hello': 1}));
 });
 
 app.post('/submitPost', function (req, res, next) {
@@ -136,21 +132,13 @@ app.post('/submitPost', function (req, res, next) {
 });
 
 app.post('/register', function (req, res, next) {
-	res.header("Access-Control-Allow-Origin", "*");
-    res.setHeader('Access-Control-Allow-Credentials', true);
-
-	console.log(req.body);
 	if (req.body.email &&
 	  req.body.username &&
 	  req.body.password &&
 	  req.body.passwordConf) {
-		console.log(req.body.password);
-	console.log(req.body.passwordConf);
-	console.log(req.body.password == req.body.passwordConf);
-	console.log(req.body.password === req.body.passwordConf);
 
       if (req.body.password != req.body.passwordConf) 
-	  	return res.send({"response": "The passwords must match!"});
+	  	return res.send({'response': 'The passwords must match!'});
 
 	  var userData = {	
 	    email: req.body.email,
@@ -164,53 +152,47 @@ app.post('/register', function (req, res, next) {
 
 	  User.create(userData, function (err, user) {
 	    if (err) {
-	      return res.send({"response": "The user already exists"});
+	      return res.redirect('/profile');
 	    } else {
-	    	console.log('gucii');
           req.session.userId = user._id;
-	      return res.send({"response": "Thank you, " + req.body.username + ", your registration is complete!"});
+	      return res.redirect('/post/1');
 	    }
 	  });
+
+
 	} else if (!req.body.email ||
 				!req.body.username ||
 				!req.body.password || 
 				!req.body.passwordConf) {
+
 		var err = new Error('All fields are required');
 		err.status = 401;
-		return res.send({"response": "All fields are required"});
+		res.send({"response": "The user already exists"});
 	} else {
-		return res.send({"response": "The user already exists"})
+		res.send({"response": "Thank you, " + req.body.username + ", your registration is complete!"});
 	}
 });
 
 app.post('/login', function(req, res, next) {
-	console.log(req.body);
-	console.log(req.body.logemail);
-	console.log(req.body.logpassword);
-	console.log(req.session);
-	// res.header("Access-Control-Allow-Origin", "http://localhost:5000");
-	res.header("Access-Control-Allow-Origin", "*");
-    res.setHeader('Access-Control-Allow-Credentials', true);
-
 	User.authenticate(req.body.logemail, req.body.logpassword, function(err, user) {
 		if (err || !user) {
 			var err = new Error('Email or pasword not found');
 			err.status = 401;
-			return res.send({"response": "Email or Password Not Found"});
+			res.send({'response': 'Email or Password Not Found'});
 		} else {
-			console.log('we good');
+
+			let options = {
+		        maxAge: 1000 * 60 * 15, // will expire after 15 minutes
+		        httpOnly: true, 
+		        signed: false 
+		    }
 			req.session.userId = user._id;
-			return res.send({"response": "You've Logged in Successfully!"});
+			res.send({'response': 'You have Logged in Successfully!'});
 		}
 	});
 });
 
 app.get('/profile', function (req, res, next) {
-	console.log(req.session);
-	console.log(req.session.userId);
-	res.header("Access-Control-Allow-Origin", "*");
-    res.setHeader('Access-Control-Allow-Credentials', true);
-
 	User.findById(req.session.userId).exec(function(error, user) {
 		if (error) {
 			return error;
@@ -218,43 +200,39 @@ app.get('/profile', function (req, res, next) {
 			if (user === null) {
 				var err = new Error('Not authorized');
 				err.status = 400;
-				console.log('lmao profile died');
-				return res.send({"response": "Unauthorized"});
+				res.send({'response': 'Unauthorizedd'});
 			} else {
-          return res.send({"username": user.username, "email": user.email})
+          		res.send({'username': user.username, 'email': user.email})
 			}
 		}
-	})
+	});
 });
 
 app.get('/profiles', function(req, res, next) {
-	res.header("Access-Control-Allow-Origin", "*");
-    res.setHeader('Access-Control-Allow-Credentials', true);
 	User.find({}, function(err, users) {
 		var userMap = [];
 		users.forEach(function(user) {
 			userMap.push(user);
 		});
 		res.send(userMap);
-	})
-})
+	});
+
+});
 
 app.get('/logout', function (req, res, next) {
-	res.header("Access-Control-Allow-Origin", "*");
-    res.setHeader('Access-Control-Allow-Credentials', true);
-
-  if (req.session) {
-    // delete session object
-    req.session.destroy(function (err) {
-      if (err) {
-        return next(err);
-      } else {
-        return "logged out";
-      }
+	if (req.session) {
+    	// delete session object
+    	req.session.destroy(function (err) {
+        if (err) {
+        	return next(err);
+        } else {
+            return ({'response': 'logged out'});
+        }
     });
   }
+
 });
 
 app.listen(app.get('port'), () => {
-	console.log("App listening on " + app.get('port'));
+	console.log('App listening on ' + app.get('port'));
 });
