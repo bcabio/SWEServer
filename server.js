@@ -15,11 +15,27 @@ var bodyParser = require('body-parser');
 mongoose.connect(process.env.MONGO_URL);
 
 var db = mongoose.connection;
+var nextID = 0;
 
 //handle mongo error
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function () {
   // we're connected!
+  // Find highest id for posts
+  Post.find().sort({id:-1}).limit(1).exec(function(error, posts) {
+    if(error) {
+        console.log("oh no");
+    } else {
+        if (posts == null) {
+            console.log("Oh shitto the database is empty");
+        } else {
+            console.log(nextID);
+            console.log(posts);
+            nextID = posts[0].id + 1;
+            console.log(nextID);
+        }
+    }
+  })
 });
 
 const app = express();
@@ -92,6 +108,40 @@ app.get('/posts', (req, res, next) => {
             }
         }
     })
+});
+
+app.post('/submitPost', function (req, res, next) {
+    console.log(req.body);
+    if (req.body.title &&
+        req.body.description &&
+        req.body.pictureLink) {
+
+        var postData = {  
+            id: nextID,
+            title: req.body.title,
+            description: req.body.description,
+            pictureLink: req.body.pictureLink,
+            creator: "TesterDefault"
+        }
+
+        //use schema.create to insert data into the db
+        Post.create(postData, function (err, user) {
+            if (err) {
+                return res.send({"response": "error some how" + err.message});
+            } else {
+                nextID = nextID + 1;
+                return res.send({"response": "Thank you for submitting a post!"});
+            }
+        });
+    } else if (!req.body.title ||
+                !req.body.description ||
+                !req.body.pictureLink) {
+        var err = new Error('All fields are required');
+        err.status = 401;
+        return res.send({"response": "All fields are required"});
+    } else {
+        return res.send({"response": "really bad error"})
+    }
 });
 
 app.post('/register', function (req, res, next) {
