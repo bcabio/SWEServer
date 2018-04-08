@@ -165,10 +165,10 @@ app.post('/register', function (req, res, next) {
 
 	  User.create(userData, function (err, user) {
 	    if (err) {
-	      return res.redirect('/profile');
+	      return res.send({"response": "User already exists"});
 	    } else {
           req.session.userId = user._id;
-	      return res.redirect('/post/1');
+        return res.send({"response": "Registration Complete"});
 	    }
 	  });
 
@@ -239,10 +239,9 @@ app.get('/logout', function (req, res, next) {
     	// delete session object
     	req.session.destroy(function (err) {
         if (err) {
-        	return next(err);
+        	res.send({"response": "Something went wrong"});
         } else {
           res.send({"response": "logged out"});
-            return res.redirect('/');
         }
     });
           console.log('logged out');
