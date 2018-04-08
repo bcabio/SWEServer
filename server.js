@@ -206,6 +206,7 @@ app.post('/login', function(req, res, next) {
 });
 
 app.get('/profile', function (req, res, next) {
+  console.log('profile req.session', req.session);
 	User.findById(req.session.userId).exec(function(error, user) {
 		if (error) {
 			return error;
@@ -233,15 +234,18 @@ app.get('/profiles', function(req, res, next) {
 });
 
 app.get('/logout', function (req, res, next) {
+  console.log('req.session', req.session);
 	if (req.session) {
     	// delete session object
     	req.session.destroy(function (err) {
         if (err) {
         	return next(err);
         } else {
-            return ({'response': 'logged out'});
+          res.send({"response": "logged out"});
+            return res.redirect('/');
         }
     });
+          console.log('logged out');
   }
 
 });
