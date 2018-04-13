@@ -137,6 +137,8 @@ app.post('/submitPost', function (req, res, next) {
         //use schema.create to insert data into the db
         Post.create(postData, function (err, user) {
             if (err) {
+                if (isNaN(parseFloat(postData.latitude)) || isNaN(parseFloat(postData.longitude)))
+                  return res.send({"response": "Unable to acquire your geo location from your profile. Please go to your profile page to enable geolocation"});
                 return res.send({"response": "error some how" + err.message});
             } else {
                 nextID = nextID + 1;
@@ -178,7 +180,7 @@ app.post('/register', function (req, res, next) {
 	      return res.send({"response": "User already exists"});
 	    } else {
         req.session.userId = user._id;
-        return res.send({"response": "Registration Complete"});
+        return res.send({"response": "Registration Complete. Please Log in"});
 	    }
 	  });
 
@@ -256,6 +258,7 @@ app.get('/profile', function (req, res, next) {
 		if (error) {
 			return error;
 		} else {
+      console.log(user);
 			if (user === null) {
 				var err = new Error('Not authorized');
 				err.status = 400;
