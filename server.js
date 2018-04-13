@@ -62,7 +62,7 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.use(express.static(__dirname));
 
 app.use(function(req, res, next) {
-  res.setHeader('Access-Control-Allow-Origin', process.env.SERVER_URL);
+  res.setHeader('Access-Control-Allow-Origin', "*");
   res.setHeader('Access-Control-Allow-Credentials', true);
   return next();
 });
