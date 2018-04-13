@@ -64,6 +64,7 @@ app.use(express.static(__dirname));
 app.use(function(req, res, next) {
   res.setHeader('Access-Control-Allow-Origin', "*");
   res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   return next();
 });
 
