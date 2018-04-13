@@ -23,6 +23,12 @@ var UserSchema = new mongoose.Schema({
 	passwordConf: {
 		type: String, 
 		required: true
+	},
+	latitude: {
+		type: Number
+	}, 
+	longitude: {
+		type: Number
 	}
 });
 

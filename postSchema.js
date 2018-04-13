@@ -27,8 +27,18 @@ var PostSchema = new mongoose.Schema({
 	creator: {
 		type: String,
 		required: true
+	},
+	latitude: {
+		type: Number,
+		required: true
+	},
+	longitude: {
+		type: Number,
+		required: true
 	}
 });
+
+
 
 var Post = mongoose.model('Post', PostSchema);
 module.exports = Post;

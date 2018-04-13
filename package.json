@@ -15,8 +15,10 @@
     "dotenv": "^5.0.1",
     "express": "^4.16.2",
     "express-session": "^1.15.6",
+    "geocodio": "^2.0.0",
     "mongoose": "^5.0.9",
-    "session": "^0.1.0"
+    "session": "^0.1.0",
+    "sort-by-distance": "^1.0.0"
   },
   "scripts": {
     "start": "react-scripts start",

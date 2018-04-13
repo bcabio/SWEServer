@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv').config();
 const cors = require('cors');
+const Geocodio = require('geocodio');
+const sortByDistance = require('sort-by-distance');
 
 var User = require('./userSchema');
 var Post = require('./postSchema');
@@ -13,6 +15,7 @@ var session = require('express-session');
 var MongoStore = require('connect-mongo')(session);
 var bodyParser = require('body-parser');
 mongoose.connect(process.env.MONGO_URL);
+var geocodio = new Geocodio({api_key: process.env.GEOCODIO_API_KEY});
 
 var db = mongoose.connection;
 var nextID = 0;
@@ -29,10 +32,7 @@ db.once('open', function () {
         if (posts == null) {
             console.log("Oh shitto the database is empty");
         } else {
-            console.log(nextID);
-            console.log(posts);
             nextID = posts[0].id + 1;
-            console.log(nextID);
         }
     }
   })
@@ -62,12 +62,10 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.use(express.static(__dirname));
 
 app.use(function(req, res, next) {
-	res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
-	res.setHeader('Access-Control-Allow-Credentials', true);
-	return next();
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  return next();
 });
-
-
 
 
 app.set('port', (process.env.PORT || 5000));
@@ -90,6 +88,7 @@ app.get('/post/:postId', (req, res, next) => {
 
 
 app.get('/posts', (req, res, next) => {
+  console.log(req.session);
     Post.find({
         $and: [
             {'id': {$gte: 0}},
@@ -104,6 +103,14 @@ app.get('/posts', (req, res, next) => {
                 err.status = 400;
                 return res.send(err);
             } else {
+                const options = {
+                  yName: 'latitude',
+                  xName: 'longitude'
+                }
+
+                // const origin = 
+
+
                 return res.send(JSON.stringify(posts));
             }
         }
@@ -111,6 +118,7 @@ app.get('/posts', (req, res, next) => {
 });
 
 app.post('/submitPost', function (req, res, next) {
+    console.log(req.session);
     console.log(req.body);
     if (req.body.title &&
         req.body.description &&
@@ -121,7 +129,9 @@ app.post('/submitPost', function (req, res, next) {
             title: req.body.title,
             description: req.body.description,
             pictureLink: req.body.pictureLink,
-            creator: "TesterDefault"
+            creator: req.body.creator,
+            latitude: req.body.latitude,
+            longitude: req.body.longitude
         }
 
         //use schema.create to insert data into the db
@@ -151,7 +161,7 @@ app.post('/register', function (req, res, next) {
 	  req.body.passwordConf) {
 
       if (req.body.password != req.body.passwordConf) 
-	  	return res.send({'response': 'The passwords must match!'});
+	  	  return res.send({'response': 'The passwords must match!'});
 
 	  var userData = {	
 	    email: req.body.email,
@@ -167,7 +177,7 @@ app.post('/register', function (req, res, next) {
 	    if (err) {
 	      return res.send({"response": "User already exists"});
 	    } else {
-          req.session.userId = user._id;
+        req.session.userId = user._id;
         return res.send({"response": "Registration Complete"});
 	    }
 	  });
@@ -186,9 +196,11 @@ app.post('/register', function (req, res, next) {
 	}
 });
 
+
 app.post('/login', function(req, res, next) {
 	User.authenticate(req.body.logemail, req.body.logpassword, function(err, user) {
 		if (err || !user) {
+      console.log(err);
 			var err = new Error('Email or pasword not found');
 			err.status = 401;
 			res.send({'response': 'Email or Password Not Found'});
@@ -205,6 +217,39 @@ app.post('/login', function(req, res, next) {
 	});
 });
 
+
+app.post('/updateSession', function(req, res, next) {
+  Object.keys(req.body).forEach((fieldName) => {
+    if (fieldName === 'longitude' || fieldName === 'latitude')
+      req.session[fieldName] = parseFloat(req.body[fieldName]);
+  }); 
+  console.log(req.session);
+  console.log(req.body);
+  res.send('ok');
+});
+
+app.post('/updateProfile', function(req, res, next) {
+  Object.keys(req.body).forEach((fieldName) => {
+    if (fieldName === 'longitude' || fieldName === 'latitude')
+      req.session[fieldName] = parseFloat(req.body[fieldName]);
+      req.body[fieldName] = parseFloat(req.body[fieldName]);
+  });
+  User.findByIdAndUpdate(req.session.userId, {$set: req.body}).exec(function(error, user) {
+    console.log(user);
+    if (error) {
+      console.log(error);
+    } else {
+      if (user === null) {
+        console.log('null');
+        res.send({'response': 'User not updated'});
+      } else {
+        res.send("ok")
+      }
+    }
+  });
+});
+
+
 app.get('/profile', function (req, res, next) {
   console.log('profile req.session', req.session);
 	User.findById(req.session.userId).exec(function(error, user) {
@@ -216,7 +261,18 @@ app.get('/profile', function (req, res, next) {
 				err.status = 400;
 				res.send({'response': 'Unauthorizedd'});
 			} else {
-          		res.send({'username': user.username, 'email': user.email})
+
+        let data = {
+          username: user['username'],
+          email: user['email']
+        }
+
+        if(user['longitude'] != null || user['latitude'] != null) {
+          data['longitude'] = user['longitude']
+          data['latitude'] = user['latitude']
+        }
+
+        res.send(JSON.stringify(data));
 			}
 		}
 	});
