@@ -170,7 +170,7 @@ app.post('/register', function (req, res, next) {
 	  	  return res.send({'response': 'The passwords must match!'});
 
       if(!req.body.email.includes("@")) {
-        return  res.send({"response": "Please input a valid email"});
+        return res.send({"response": "Please input a valid email"});
       }
 	  var userData = {	
 	    email: req.body.email,
@@ -209,9 +209,9 @@ app.post('/login', function(req, res, next) {
 	User.authenticate(req.body.logemail, req.body.logpassword, function(err, user) {
 		if (err || !user) {
       console.log(err);
-			var err = new Error('Email or pasword not found');
+			var err = new Error('User not found');
 			err.status = 401;
-			res.send({'response': 'Email or Password Not Found'});
+			res.send({'response': 'User Not Found'});
 		} else {
 
 			let options = {
