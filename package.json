@@ -13,6 +13,7 @@
     "cookie-session": "^2.0.0-beta.3",
     "cors": "^2.8.4",
     "dotenv": "^5.0.1",
+    "email-validator": "^2.0.3",
     "express": "^4.16.2",
     "express-session": "^1.15.6",
     "geocodio": "^2.0.0",

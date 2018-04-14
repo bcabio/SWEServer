@@ -6,6 +6,7 @@ const dotenv = require('dotenv').config();
 const cors = require('cors');
 const Geocodio = require('geocodio');
 const sortByDistance = require('sort-by-distance');
+const validator = require('email-validator');
 
 var User = require('./userSchema');
 var Post = require('./postSchema');
@@ -63,14 +64,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
 app.use(express.static(__dirname));
-
-// app.use(function(req, res, next) {
-//   // res.setHeader('Access-Control-Allow-Origin', "https://swe-server.herokuapp.com/");
-//   // res.setHeader('Access-Control-Allow-Credentials', true);
-//   // res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-//   return next();
-// });
-
 
 app.set('port', (process.env.PORT || 5000));
 
@@ -169,7 +162,7 @@ app.post('/register', function (req, res, next) {
       if (req.body.password != req.body.passwordConf) 
 	  	  return res.send({'response': 'The passwords must match!'});
 
-      if(!req.body.email.includes("@")) {
+      if(!validator.validate(req.body.email)) {
         return res.send({"response": "Please input a valid email"});
       }
 	  var userData = {	
@@ -198,7 +191,7 @@ app.post('/register', function (req, res, next) {
 
 		var err = new Error('All fields are required');
 		err.status = 401;
-		res.send({"response": "The user already exists"});
+		res.send({"response": "Please fill out all of the fields"});
 	} else {
 		res.send({"response": "Thank you, " + req.body.username + ", your registration is complete!"});
 	}
