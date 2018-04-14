@@ -30,7 +30,7 @@ db.once('open', function () {
         console.log("oh no");
     } else {
         if (posts == null) {
-            console.log("Oh shitto the database is empty");
+            console.log("The database is empty");
         } else {
             nextID = posts[0].id + 1;
         }
@@ -98,7 +98,7 @@ app.get('/posts', (req, res, next) => {
             {'id': {$gte: 0}},
             {'id': {$lte: 20}}
         ]
-    }).exec(function(error, posts) {
+    }).sort({id:-1}).exec(function(error, posts) {
         if (error) {
             return next(error);
         } else {
