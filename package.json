@@ -16,7 +16,9 @@
     "express": "^4.16.2",
     "express-session": "^1.15.6",
     "geocodio": "^2.0.0",
+    "local-reverse-geocoder": "^0.4.1",
     "mongoose": "^5.0.9",
+    "reverse-geocoding": "^3.0.1",
     "session": "^0.1.0",
     "sort-by-distance": "^1.0.0"
   },

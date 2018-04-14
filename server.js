@@ -169,6 +169,9 @@ app.post('/register', function (req, res, next) {
       if (req.body.password != req.body.passwordConf) 
 	  	  return res.send({'response': 'The passwords must match!'});
 
+      if(!req.body.email.includes("@")) {
+        return  res.send({"response": "Please input a valid email"});
+      }
 	  var userData = {	
 	    email: req.body.email,
 	    username: req.body.username,
@@ -176,7 +179,6 @@ app.post('/register', function (req, res, next) {
 	    passwordConf: req.body.passwordConf,
 	  }
 
-	  
 	  //use schema.create to insert data into the db
 
 	  User.create(userData, function (err, user) {
